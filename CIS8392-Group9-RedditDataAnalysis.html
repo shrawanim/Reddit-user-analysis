@@ -1,0 +1,1180 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">Reddit Piracy Subreddit Data Analysis</h1>
+<h4 class="date">4/27/2022</h4>
+
+</div>
+
+
+<div class="section level3">
+<h3>Reddit Data Analysis</h3>
+<div class="section level4">
+<h4>Group 8: Animesh Jain, Ashish Poojari, Shrawani Misra, Sudeshna Sarkar</h4>
+</div>
+</div>
+<div class="section level3">
+<h3>Business Context</h3>
+<p><strong>Reddit.com</strong> is a social media news and discussion website, where votes promote user-provided stories, links, and comments to the front page of the site. As of October 2019, Reddit.com is the 18th most visited site in the world according to Alexa Internet.</p>
+<p>As a site that relies upon users for content, interaction, and moderation, some interesting data can be pulled from Reddit that can show real-time trends of popular topics. Users “upvote” and “downvote” each others comments, with upvoted comments rising higher in threads. So a popular comment is much more likely to be seen by another user, and perhaps then further upvoted or commented upon. This makes for a complex network of users and discussions that also provides insight into trending topics.</p>
+<p>Reddit is made up of “subreddits” which are categories of threads of a similar topic or type. There are subreddits for politics, celebrities, memes, video games, and just about every other topic one can think of (and some one might never expect!).</p>
+</div>
+<div class="section level3">
+<h3>Problem Description</h3>
+<p>Digital piracy is often portrayed as a victimless crime, but that portrayal is false. Piracy negatively affects every single person working in these industries and their supply chains.On less monitored platforms like Reddit, discussing controversial topics is easier and that includes Piracy. We have analysed the data of the subreddit r/Piracy and see what kind of content is passed around to help propagate the ease of access to pirated content through normal users and bots.</p>
+</div>
+<div class="section level3">
+<h3>Data Summary, Exploration, and Discussion</h3>
+<div class="section level4">
+<h4>Libraries used</h4>
+<p>These libraries are used at various steps in this file. The use of prominent libraries are highlighted throughout the text.</p>
+<pre class="r"><code>library(tidytext)
+library(stringr)
+library(dplyr)
+library(kableExtra)
+library(RedditExtractoR)
+library(tidyverse)
+library(lubridate)</code></pre>
+</div>
+<div class="section level4">
+<h4>Reddit Data Collection</h4>
+<p>Data Collect: piracy_comments_bots <a rel="noopener" href="https://drive.google.com/file/d/1OaXRe6DfRW5PPZ1r1zYTkgdEcNGmvg2z/view?usp=sharing" class="uri">https://drive.google.com/file/d/1OaXRe6DfRW5PPZ1r1zYTkgdEcNGmvg2z/view?usp=sharing</a> piracy_threads <a rel="noopener" href="https://drive.google.com/file/d/1N1oVa0IxexYe4TUxkJFZ5_gz3lkrwYTS/view?usp=sharing" class="uri">https://drive.google.com/file/d/1N1oVa0IxexYe4TUxkJFZ5_gz3lkrwYTS/view?usp=sharing</a></p>
+<p><em>Reddit Extractor</em> is an R package for extracting data out of Reddit. It allows you to: 1. find subreddits based on a search query 2. find a user and their Reddit history 3. find URLs to threads of interest and retrieve comments out of these threads</p>
+<p>This basic API interaction does not require any registration with Reddit or use of a token for usage in R. To begin, we first installed and load the RedditExtractoR package:</p>
+<p>install.packages(“RedditExtractoR”) library(RedditExctractoR)</p>
+<p><img src="javascript://"/></p>
+<p>Code Snippet:<br/>
+library(RedditExtractoR)<br/>
+piracy_urls &lt;- find_thread_urls(subreddit=“Piracy”, sort_by=“top”, period=“all” )<br/>
+threads_contents_piracy &lt;- get_thread_content(piracy_urls<span class="math inline">\(url[1:100]) threads_piracy &lt;- threads_contents_piracy\)</span>threads<br/>
+comments_piracy &lt;-threads_contents_piracy$comments</p>
+<p><strong>find_thread_urls</strong><br/>
+Find URLs to reddit threads of interest. There are 2 available search strategies: by keywords and by home page. Using a set of keywords Can help you narrow down your search to a topic of interest that crosses multiple subreddits whereas searching by home page can help you find, for example, top posts within a specific subreddit.</p>
+<p><strong>get_thread_content</strong> This function takes a collection of URLs and returns a list with 2 data frames: 1. a data frame containing meta data describing each thread 2. a data frame with comments found in all threads</p>
+</div>
+<div class="section level4">
+<h4>Load Data and Pre-process Data</h4>
+<pre class="r"><code>b = read.csv(&quot;piracy_comments_bots.csv&quot;)</code></pre>
+<pre class="r"><code>reddit_comments &lt;- unique(b)</code></pre>
+<pre class="r"><code>kable(reddit_comments[1000, ], caption = &quot;Raw Reddit Data&quot;) %&gt;%
+  kable_styling(font_size = 10) %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;200px&quot;)</code></pre>
+<div style="border: 1px solid #ddd;padding: 0px;overflow-y: scroll;height:200px;overflow-x: scroll;width:100%;">
+<table class="table" style="font-size: 10px;margin-left: auto;margin-right: auto;">
+<caption style="font-size: initial !important;">
+Raw Reddit Data
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+id
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+url
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+author
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+date
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+timestamp
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+score
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+upvotes
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+downvotes
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+golds
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comment
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comment_id
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+bots
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+1000
+</td>
+<td style="text-align:right;">
+1001
+</td>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/ixzg3x/just_buy_it_its_only_a_few_bucks/" class="uri">https://www.reddit.com/r/Piracy/comments/ixzg3x/just_buy_it_its_only_a_few_bucks/</a>
+</td>
+<td style="text-align:left;">
+thatepicstarpotato
+</td>
+<td style="text-align:left;">
+28-09-2020
+</td>
+<td style="text-align:right;">
+1601307933
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:left;">
+Never had an issue with the guys selling shit rips on CDs. There are countries that still have download speeds in kbps. These guys pay for an expensive internet connection so that the rest of us can get CDs for like less than a dollar.
+</td>
+<td style="text-align:left;">
+1_5_1_1_2
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Data Summary</strong></p>
+<pre class="r"><code>kable(summary(reddit_comments), caption = &quot;Data Summary&quot;) %&gt;%
+  kable_styling(font_size = 10) %&gt;%
+  scroll_box(width =&quot;100%&quot;, height = &quot;200px&quot;)  </code></pre>
+<div style="border: 1px solid #ddd;padding: 0px;overflow-y: scroll;height:200px;overflow-x: scroll;width:100%;">
+<table class="table" style="font-size: 10px;margin-left: auto;margin-right: auto;">
+<caption style="font-size: initial !important;">
+Data Summary
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+id
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+url
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+author
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+date
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+timestamp
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+score
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+upvotes
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+downvotes
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+golds
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comment
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comment_id
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+bots
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+Min. : 1
+</td>
+<td style="text-align:left;">
+Length:8653
+</td>
+<td style="text-align:left;">
+Length:8653
+</td>
+<td style="text-align:left;">
+Length:8653
+</td>
+<td style="text-align:left;">
+Min. :1.540e+09
+</td>
+<td style="text-align:left;">
+Min. :-207.00
+</td>
+<td style="text-align:left;">
+Min. :-207.00
+</td>
+<td style="text-align:left;">
+Min. :0
+</td>
+<td style="text-align:left;">
+Min. :0
+</td>
+<td style="text-align:left;">
+Length:8653
+</td>
+<td style="text-align:left;">
+Length:8653
+</td>
+<td style="text-align:left;">
+Min. :0.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+1st Qu.:2165
+</td>
+<td style="text-align:left;">
+Class :character
+</td>
+<td style="text-align:left;">
+Class :character
+</td>
+<td style="text-align:left;">
+Class :character
+</td>
+<td style="text-align:left;">
+1st Qu.:1.562e+09
+</td>
+<td style="text-align:left;">
+1st Qu.: 1.00
+</td>
+<td style="text-align:left;">
+1st Qu.: 1.00
+</td>
+<td style="text-align:left;">
+1st Qu.:0
+</td>
+<td style="text-align:left;">
+1st Qu.:0
+</td>
+<td style="text-align:left;">
+Class :character
+</td>
+<td style="text-align:left;">
+Class :character
+</td>
+<td style="text-align:left;">
+1st Qu.:0.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+Median :4328
+</td>
+<td style="text-align:left;">
+Mode :character
+</td>
+<td style="text-align:left;">
+Mode :character
+</td>
+<td style="text-align:left;">
+Mode :character
+</td>
+<td style="text-align:left;">
+Median :1.587e+09
+</td>
+<td style="text-align:left;">
+Median : 2.00
+</td>
+<td style="text-align:left;">
+Median : 2.00
+</td>
+<td style="text-align:left;">
+Median :0
+</td>
+<td style="text-align:left;">
+Median :0
+</td>
+<td style="text-align:left;">
+Mode :character
+</td>
+<td style="text-align:left;">
+Mode :character
+</td>
+<td style="text-align:left;">
+Median :0.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+Mean :4328
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Mean :1.588e+09
+</td>
+<td style="text-align:left;">
+Mean : 16.03
+</td>
+<td style="text-align:left;">
+Mean : 16.03
+</td>
+<td style="text-align:left;">
+Mean :0
+</td>
+<td style="text-align:left;">
+Mean :0
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Mean :0.1897
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+3rd Qu.:6491
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+3rd Qu.:1.612e+09
+</td>
+<td style="text-align:left;">
+3rd Qu.: 9.00
+</td>
+<td style="text-align:left;">
+3rd Qu.: 9.00
+</td>
+<td style="text-align:left;">
+3rd Qu.:0
+</td>
+<td style="text-align:left;">
+3rd Qu.:0
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+3rd Qu.:0.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+Max. :8654
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Max. :1.647e+09
+</td>
+<td style="text-align:left;">
+Max. :1375.00
+</td>
+<td style="text-align:left;">
+Max. :1375.00
+</td>
+<td style="text-align:left;">
+Max. :0
+</td>
+<td style="text-align:left;">
+Max. :0
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Max. :1.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA’s :1
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Removing unnecessary special characters:</strong></p>
+<pre class="r"><code>reddit_comment_df &lt;- reddit_comments %&gt;%
+  mutate(thread_id = url) %&gt;%
+  mutate(comm_date = dmy(date)) %&gt;%
+  mutate(comment = str_replace_all(comment,  &quot;&lt;.+&gt;&quot;, &quot; &quot;)) %&gt;%
+  mutate(comment = str_replace_all(comment,  &quot;\\W&quot;, &quot; &quot;)) %&gt;%
+  mutate(comment = str_replace_all(comment,  
+                                   &quot;www|https|http&quot;, &quot; &quot;)) %&gt;%
+  mutate(comment_score = as.numeric(score)) %&gt;%
+  select(comm_date, comment_score, thread_id, author, upvotes, downvotes,golds,
+         comment_id, comment, bots) %&gt;%
+  unique() %&gt;%
+  na.omit()</code></pre>
+<pre class="r"><code>reddit_df &lt;- rbind(reddit_comment_df)</code></pre>
+<pre class="r"><code>kable(reddit_df[8, ], caption = &quot;Selected Reddit Data&quot;) %&gt;%
+  kable_styling(font_size = 10) %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;200px&quot;)</code></pre>
+<div style="border: 1px solid #ddd;padding: 0px;overflow-y: scroll;height:200px;overflow-x: scroll;width:100%;">
+<table class="table" style="font-size: 10px;margin-left: auto;margin-right: auto;">
+<caption style="font-size: initial !important;">
+Selected Reddit Data
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comm_date
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+comment_score
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+thread_id
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+author
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+upvotes
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+downvotes
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+golds
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comment_id
+</th>
+<th style="text-align:left;position: sticky;top:0;background-color: #FFFFFF;">
+comment
+</th>
+<th style="text-align:right;position: sticky;top:0;background-color: #FFFFFF;">
+bots
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+8
+</td>
+<td style="text-align:left;">
+2019-09-05
+</td>
+<td style="text-align:right;">
+-3
+</td>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/czf80s/well_now_im_concerned/" class="uri">https://www.reddit.com/r/Piracy/comments/czf80s/well_now_im_concerned/</a>
+</td>
+<td style="text-align:left;">
+CharlieSummers3
+</td>
+<td style="text-align:right;">
+-3
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:left;">
+1_1_1_1_1_2_1
+</td>
+<td style="text-align:left;">
+But it s generally not necessary nor polite outside the correct context
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="section level3">
+<h3>Explore Data</h3>
+<div class="section level4">
+<h4>Plot 1: Comments Timeline</h4>
+<p>As seen from the Comments Timeline plot, we can conclude the below points:<br/>
+1. Maximum no of comments was posted between July’19 to November ’19.<br/>
+2. Least no of comments were posted before November ’18<br/>
+3. Between the time Mar’19 to Mar’22 t no of comments posted were mostly within the range of 1000.<br/>
+Thus, it is evident from the plot that. No of Comments posted remains mostly constant and aroud 1000 with peak point being around July’19 to November ’19.</p>
+<pre class="r"><code>reddit_df %&gt;%
+  group_by(month = floor_date(comm_date, &quot;month&quot;)) %&gt;%
+  summarize(comments = n()) %&gt;%
+  ggplot(aes(month, comments)) +
+  geom_line() +
+  labs(title = &quot;Comments Timeline&quot;) +
+  scale_x_date(date_labels = &quot;%b/%y&quot;, date_breaks = &quot;4 months&quot;) +
+  theme(axis.text.x = element_text(size = 7, angle = 45))</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+</div>
+<div class="section level3">
+<h3>Explore Subreddit Threads</h3>
+<div class="section level4">
+<h4>Plot 2: Subreddit Threads</h4>
+<pre class="r"><code>#number of comments
+n_comments &lt;- nrow(reddit_df)
+
+
+
+threads &lt;-reddit_comment_df %&gt;%
+  count(thread_id) %&gt;%
+  unique()
+
+summary_df &lt;- tibble(&quot;number_threads&quot;=n_distinct(threads),
+                     &quot;number_comments&quot;=n_comments)
+
+summary_df %&gt;%
+  kable() %&gt;%
+  kable_styling(c(&quot;striped&quot;, &quot;bordered&quot;),
+                full_width = FALSE, position = &quot;left&quot;) %&gt;%
+  row_spec(row = 1, align = &quot;right&quot;)</code></pre>
+<table class="table table-striped table-bordered" style="width: auto !important;">
+<thead>
+<tr>
+<th style="text-align:right;">
+number_threads
+</th>
+<th style="text-align:right;">
+number_comments
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;text-align: right;">
+43
+</td>
+<td style="text-align:right;text-align: right;">
+8652
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4>Plot 3: Date Wise Highest Number of Comments (&gt;500 comments)</h4>
+<p>This plot shows that<br/>
+1. So, we notice from the plot that Maximum no of comments were posted between the time period 2019 to 2020.<br/>
+2. We notice from the plot that Minimum no of comments were posted between the time 2020 to 2021.</p>
+<pre class="r"><code>reddit_df %&gt;%
+  group_by(comm_date) %&gt;%
+  summarize(comments = n()) %&gt;%
+  filter(comments &gt; 100) %&gt;%
+  ggplot(aes(comm_date, comments, fill = comments)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = &quot;Date Wise Highest Number of Comments (&gt;500 comments)&quot;)</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>top5 &lt;- top_n(threads, 5) %&gt;%
+  arrange(desc(n))</code></pre>
+<pre><code>## Selecting by n</code></pre>
+</div>
+<div class="section level4">
+<h4>Plot 4: Top Five Thread by Comment Count</h4>
+<p>We have extracted the top 5 Reddit thread by the Comment Count.</p>
+<pre class="r"><code>top5 %&gt;%
+  kable(caption = &quot;Top Five Thread by Comment Count&quot;) %&gt;%
+  kable_styling(font_size = 8)</code></pre>
+<table class="table" style="font-size: 8px;margin-left: auto;margin-right: auto;">
+<caption style="font-size: initial !important;">
+Top Five Thread by Comment Count
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+thread_id
+</th>
+<th style="text-align:right;">
+n
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/ixzg3x/just_buy_it_its_only_a_few_bucks/" class="uri">https://www.reddit.com/r/Piracy/comments/ixzg3x/just_buy_it_its_only_a_few_bucks/</a>
+</td>
+<td style="text-align:right;">
+462
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/b5ifgb/music_labels_sue_charter_complain_that_high/" class="uri">https://www.reddit.com/r/Piracy/comments/b5ifgb/music_labels_sue_charter_complain_that_high/</a>
+</td>
+<td style="text-align:right;">
+422
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/givl0o/why_do_we_pirate_almost_all_reasons_found/" class="uri">https://www.reddit.com/r/Piracy/comments/givl0o/why_do_we_pirate_almost_all_reasons_found/</a>
+</td>
+<td style="text-align:right;">
+338
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/b2hlzt/reddit_admins_issue_formal_warning_to_rpiracy/" class="uri">https://www.reddit.com/r/Piracy/comments/b2hlzt/reddit_admins_issue_formal_warning_to_rpiracy/</a>
+</td>
+<td style="text-align:right;">
+331
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a rel="noopener" href="https://www.reddit.com/r/Piracy/comments/qb4bn6/lmao_why_not_just_download_tlauncher_or_something/" class="uri">https://www.reddit.com/r/Piracy/comments/qb4bn6/lmao_why_not_just_download_tlauncher_or_something/</a>
+</td>
+<td style="text-align:right;">
+324
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4>Plot 5: Users with Highest Number of comments (&gt;20)</h4>
+<p>From the above plot we could conclude that:</p>
+<ol style="list-style-type: decimal;">
+<li>Highest no of comments had been made by the user GrowAsguard which is near to 60 comments<br/>
+</li>
+<li>Second highest no of comments had been made by the user VybeXE which is near to 40 comments<br/>
+</li>
+<li>Least no of comments had been made by the user Martelliphone which is around 15<br/>
+</li>
+<li>Most users have commented in the range of 20 to 40 comments</li>
+</ol>
+<pre class="r"><code>user_df &lt;- reddit_comments %&gt;%
+  group_by(author) %&gt;%
+  summarise(n = n()) %&gt;%
+  filter(n&lt;20)
+
+
+freq_users &lt;- reddit_comments %&gt;%
+  anti_join(user_df, by = &quot;author&quot;) %&gt;%
+  mutate(author = str_replace_all(author,  &quot;\\Q[deleted]\\E&quot;, &quot; &quot;)) %&gt;%
+  group_by(author) %&gt;%
+  summarise(n = n())
+
+
+
+freq_users %&gt;%
+  filter(author != &quot; &quot;) %&gt;%
+  ggplot((aes(x = n, y = author, color = author))) +
+  geom_point(size=5) +
+  labs(x = &quot;number of comments&quot;, y = &quot;author&quot;, title = &quot;Users With Highest Number of Comments (&gt;20 comments)&quot;)</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+<div class="section level4">
+<h4>Plot 6: top 5 threads by awards</h4>
+<p>We have visualized top 5 threads by awards given by other users.</p>
+<p>Most of the top awarded threads&#160;also tend to have high upvotes and are thus very popular on the subreddit. They also have more comments where users discuss how to refine their piracy searches better. Sometimes these threads are technical tutorials, sometimes information about different websites, sometimes discussions.</p>
+<pre class="r"><code>library(ggthemes)
+
+a=read.csv(&quot;piracy_threads.csv&quot;)
+reddit_threads2= unique(a)
+
+reddit_thread_df2 &lt;- reddit_threads2 %&gt;% filter(author!=&quot;[deleted]&quot;) %&gt;%
+  mutate(date = ymd(date)) %&gt;%
+  select(title, author, upvotes, comments, total_awards_received) %&gt;%
+  arrange(desc(total_awards_received)) %&gt;%
+  na.omit()</code></pre>
+<pre class="r"><code>reddit_thread_df2 %&gt;% slice_max(total_awards_received, n=5) %&gt;%
+  ggplot(aes(author, total_awards_received)) +
+  geom_point(color=&#39;goldenrod&#39;,aes(size=upvotes)) + theme_pander() +
+  ggtitle(&quot;Top awarded threads&quot;) + theme(axis.text.x = element_text(size = 6, angle = 45))</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+</div>
+<div class="section level3">
+<h3>AI/ML procedure summary</h3>
+<p><em>H2O AutoML</em></p>
+<p>AutoML or Automatic Machine Learning is the process of automating algorithm selection, feature generation, hyperparameter tuning, iterative modeling, and model assessment. AutoML makes it easy to train and evaluate machine learning models. Automating repetitive tasks allows people to focus on the data and the business problems they are trying to solve.</p>
+<p>We will be using H2O’s AutoML for automating the machine learning workflow, which includes automatic training and tuning of many models within a user-specified time-limit.</p>
+<pre class="r"><code>library(h2o)</code></pre>
+<pre><code>## 
+## ----------------------------------------------------------------------
+## 
+## Your next step is to start H2O:
+##     &gt; h2o.init()
+## 
+## For H2O package documentation, ask for help:
+##     &gt; ??h2o
+## 
+## After starting H2O, you can use the Web UI at http://localhost:54321
+## For more information visit https://docs.h2o.ai
+## 
+## ----------------------------------------------------------------------</code></pre>
+<pre><code>## 
+## Attaching package: &#39;h2o&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:lubridate&#39;:
+## 
+##     day, hour, month, week, year</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     cor, sd, var</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     %*%, %in%, &amp;&amp;, ||, apply, as.factor, as.numeric, colnames,
+##     colnames&lt;-, ifelse, is.character, is.factor, is.numeric, log,
+##     log10, log1p, log2, round, signif, trunc</code></pre>
+<pre class="r"><code>target &lt;- &quot;bots&quot;
+predictors &lt;-colnames(select(reddit_df,-c(&#39;comment_id&#39;,&#39;thread_id&#39;,&#39;comm_date&#39;,&#39;bots&#39;)))
+
+h2o.init(nthreads = -1) </code></pre>
+<pre><code>##  Connection successful!
+## 
+## R is connected to the H2O cluster: 
+##     H2O cluster uptime:         15 hours 54 minutes 
+##     H2O cluster timezone:       America/New_York 
+##     H2O data parsing timezone:  UTC 
+##     H2O cluster version:        3.36.0.4 
+##     H2O cluster version age:    27 days  
+##     H2O cluster name:           H2O_started_from_R_Ashish_Poojari_add394 
+##     H2O cluster total nodes:    1 
+##     H2O cluster total memory:   3.12 GB 
+##     H2O cluster total cores:    8 
+##     H2O cluster allowed cores:  8 
+##     H2O cluster healthy:        TRUE 
+##     H2O Connection ip:          localhost 
+##     H2O Connection port:        54321 
+##     H2O Connection proxy:       NA 
+##     H2O Internal Security:      FALSE 
+##     R Version:                  R version 4.1.2 (2021-11-01)</code></pre>
+<pre class="r"><code>data_h2o &lt;- as.h2o(bind_cols(reddit_df))</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code>#h2o.ls()</code></pre>
+<pre class="r"><code>splits &lt;- h2o.splitFrame(data = data_h2o, ratios = c(0.7, 0.15), seed = 1234)
+train_h2o &lt;- splits[[1]] # from training data
+valid_h2o &lt;- splits[[2]] # from training data
+test_h2o  &lt;- splits[[3]]</code></pre>
+<pre class="r"><code>automl_h2o_models &lt;- h2o.automl(
+  x = predictors, 
+  y = target,
+  training_frame    = train_h2o,  
+  validation_frame  = valid_h2o,  
+  leaderboard_frame = test_h2o,
+  max_runtime_secs  = 600
+)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+## 16:56:55.300: User specified a validation frame with cross-validation still enabled. Please note that the models will still be validated using cross-validation only, the validation frame will be used to provide purely informative validation metrics on the trained models.
+## 16:56:55.301: AutoML: XGBoost is not available; skipping it.
+## 16:56:55.302: Step &#39;best_of_family_xgboost&#39; not defined in provider &#39;StackedEnsemble&#39;: skipping it.
+## 16:56:55.302: Step &#39;all_xgboost&#39; not defined in provider &#39;StackedEnsemble&#39;: skipping it.
+## 16:56:55.303: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:56:55.303: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+## 16:56:56.310: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:56:56.310: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |==                                                                    |   2%
+## 16:56:57.317: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 16:56:57.317: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |===                                                                   |   4%
+## 16:56:58.322: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:56:58.322: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |====                                                                  |   6%
+## 16:56:59.337: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:56:59.337: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |======                                                                |   8%
+## 16:57:00.344: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:57:00.344: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |=======                                                               |  10%
+## 16:57:01.354: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:57:01.354: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |=========                                                             |  12%
+## 16:57:02.368: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 16:57:02.368: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |==========                                                            |  15%
+## 16:57:03.375: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 16:57:03.375: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |===========                                                           |  16%
+## 16:57:04.382: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:57:04.382: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |=============                                                         |  18%
+## 16:57:05.395: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:57:05.395: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+## 16:57:06.403: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 16:57:06.403: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |================                                                      |  22%
+## 16:57:07.427: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 16:57:07.427: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |=================                                                     |  25%
+## 16:57:08.442: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 16:57:08.442: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |==================                                                    |  26%
+  |                                                                            
+  |====================                                                  |  28%
+  |                                                                            
+  |=============================                                         |  42%
+  |                                                                            
+  |==============================                                        |  42%
+  |                                                                            
+  |==============================                                        |  43%
+  |                                                                            
+  |===============================                                       |  44%
+  |                                                                            
+  |===============================                                       |  45%
+  |                                                                            
+  |================================                                      |  45%
+  |                                                                            
+  |================================                                      |  46%
+  |                                                                            
+  |=================================                                     |  47%
+  |                                                                            
+  |=================================                                     |  48%
+  |                                                                            
+  |==================================                                    |  48%
+  |                                                                            
+  |==================================                                    |  49%
+  |                                                                            
+  |===================================                                   |  50%
+  |                                                                            
+  |===================================                                   |  51%
+  |                                                                            
+  |====================================                                  |  51%
+  |                                                                            
+  |======================================                                |  54%
+  |                                                                            
+  |=======================================                               |  56%
+  |                                                                            
+  |========================================                              |  57%
+  |                                                                            
+  |========================================                              |  58%
+  |                                                                            
+  |=========================================                             |  58%
+  |                                                                            
+  |==========================================                            |  60%
+  |                                                                            
+  |===========================================                           |  62%
+  |                                                                            
+  |============================================                          |  63%
+  |                                                                            
+  |=============================================                         |  64%
+  |                                                                            
+  |==============================================                        |  65%
+  |                                                                            
+  |==============================================                        |  66%
+  |                                                                            
+  |===============================================                       |  67%
+  |                                                                            
+  |===============================================                       |  68%
+## 17:03:42.434: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:03:42.434: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |================================================                      |  68%
+## 17:03:43.447: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:03:43.447: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |=================================================                     |  69%
+  |                                                                            
+  |==================================================                    |  71%
+  |                                                                            
+  |===================================================                   |  73%
+  |                                                                            
+  |===================================================                   |  74%
+  |                                                                            
+  |====================================================                  |  74%
+  |                                                                            
+  |====================================================                  |  75%
+  |                                                                            
+  |=====================================================                 |  75%
+  |                                                                            
+  |=====================================================                 |  76%
+  |                                                                            
+  |=======================================================               |  78%
+  |                                                                            
+  |=======================================================               |  79%
+  |                                                                            
+  |========================================================              |  80%
+  |                                                                            
+  |=========================================================             |  81%
+  |                                                                            
+  |=========================================================             |  82%
+  |                                                                            
+  |==========================================================            |  83%
+  |                                                                            
+  |===========================================================           |  85%
+  |                                                                            
+  |============================================================          |  85%
+  |                                                                            
+  |============================================================          |  86%
+  |                                                                            
+  |=============================================================         |  87%
+  |                                                                            
+  |==============================================================        |  88%
+  |                                                                            
+  |===============================================================       |  90%
+  |                                                                            
+  |================================================================      |  91%
+  |                                                                            
+  |================================================================      |  92%
+  |                                                                            
+  |=================================================================     |  93%
+  |                                                                            
+  |==================================================================    |  94%
+  |                                                                            
+  |===================================================================   |  96%
+  |                                                                            
+  |====================================================================  |  96%
+  |                                                                            
+  |====================================================================  |  97%
+## 17:06:38.798: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:38.798: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+## 17:06:39.820: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:39.820: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |====================================================================  |  98%
+## 17:06:41.846: _train param, Dropping bad and constant columns: [comment, downvotes, golds, author]
+## 17:06:41.846: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |===================================================================== |  98%
+## 17:06:44.869: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:44.869: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+## 17:06:45.908: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:45.908: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |===================================================================== |  99%
+## 17:06:49.19: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:49.19: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+## 17:06:50.38: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:50.38: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.
+  |                                                                            
+  |======================================================================| 100%
+## 17:06:55.260: _train param, Dropping unused columns: [comment, downvotes, golds, author]
+## 17:06:55.260: _response param, Response is numeric, so the regression model will be trained. However, the cardinality is equaled to two, so if you want to train a classification model, convert the response column to categorical before training.</code></pre>
+</div>
+<div class="section level3">
+<h3>Evaluation</h3>
+<p>Since we have a multi-class problem, we evaluate our model using mean per-class error. We can see from the table that the lowest mean per-class error, or the average of errors of each class in the multiclass ‘bots’ column, is from a Deep Learning Model, at 0.387.</p>
+<pre class="r"><code>automl_h2o_models@leaderboard</code></pre>
+<pre><code>##                                                  model_id
+## 1 StackedEnsemble_BestOfFamily_1_AutoML_8_20220427_165655
+## 2 StackedEnsemble_BestOfFamily_4_AutoML_8_20220427_165655
+## 3    StackedEnsemble_AllModels_3_AutoML_8_20220427_165655
+## 4 StackedEnsemble_BestOfFamily_5_AutoML_8_20220427_165655
+## 5    StackedEnsemble_AllModels_1_AutoML_8_20220427_165655
+## 6     StackedEnsemble_Best1000_1_AutoML_8_20220427_165655
+##   mean_residual_deviance      rmse       mse       mae     rmsle
+## 1              0.1468661 0.3832311 0.1468661 0.3016526 0.2704092
+## 2              0.1468661 0.3832311 0.1468661 0.3016526 0.2704092
+## 3              0.1468661 0.3832311 0.1468661 0.3016526 0.2704092
+## 4              0.1468661 0.3832311 0.1468661 0.3016526 0.2704092
+## 5              0.1468661 0.3832311 0.1468661 0.3016526 0.2704092
+## 6              0.1468661 0.3832311 0.1468661 0.3016526 0.2704092
+## 
+## [63 rows x 6 columns]</code></pre>
+<pre class="r"><code>automl_leader &lt;- automl_h2o_models@leader</code></pre>
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="https://s.brightspace.com/lib/bsi/20.22.6-230/unbundled/mathjax.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					if (document.querySelector('math') || /\$\$|\\\(|\\\[|\\begin{|\\ref{|\\eqref{/.test(document.body.innerHTML)) {
+						document.querySelectorAll('mspace[linebreak="newline"]').forEach(elm => {
+							elm.setAttribute('style', 'display: block; height: 0.5rem;');
+						});
+
+						window.D2L.MathJax.loadMathJax({
+							'outputScale': 1.3,
+							'renderLatex': false
+						});
+					}
+				});</script></body></html>

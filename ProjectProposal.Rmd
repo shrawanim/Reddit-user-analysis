@@ -1,0 +1,46 @@
+---
+title: "Reddit Data Analysis"
+author: "Shrawani Misra, Ashish Poojari, Animesh Jain, Sudeshna Sarkar"
+date: "22/03/2022"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## DATA :
+
+-Our data source is **Reddit API**. We are planning to utilize RedditExtractoR "https://cran.r-project.org/web/packages/RedditExtractoR/".
+
+
+-This API returns contents of all of Reddit ecosystem, subreddits, user data and Karma, upvotes and downvotes, trending posts.
+
+-We intend to use the API data in JSON format. We plan to analyze a few subreddits and the comments posted on them, to classify the types of users.
+
+
+## PROBLEM DESCRIPTION :
+Reddit.com is a social media news and discussion forum, interesting data can be pulled from Reddit that can show real-time trends of popular topics. 
+
+-There are thousands of users on the platform, commenting on different topics and forum, expressing their views. As a mass media platform, it can be weaponized into a powerful tool that can manipulate the masses. 
+
+-As part of our project, we will be classifying accounts as either normal users or bots on Reddit.
+
+
+
+## ANALYTICS PLAN: 
+
+-For cleaning the data, we will be making use of tidyverse package to remove outliers and ensure data is tidy before analysis.
+
+-The text of each comment will be referred to as a document and each comment will also have a corresponding label, i.e. normal or bot.
+we intend to convert each comment into a bag of words and represent each comment as a vector.
+
+-We plan to make use of different classification models to predict whether each comment is a bot, a troll, or a normal user
+
+
+## EVALUATION PLAN:
+
+We plan to compare models above and find the best model among them. To evaluate the quality of the output, we use RMSE, confusion matrix, prediction, recall and F scores.
+
+

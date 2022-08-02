@@ -1,0 +1,361 @@
+---
+title: "Reddit Piracy Subreddit Data Analysis"
+Group 8: "Animesh Jain, Ashish Poojari, Shrawani Misra, Sudeshna Sarkar"
+date: "4/27/2022"
+output: 
+  html_document:
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Reddit Data Analysis
+#### Group 8: Animesh Jain, Ashish Poojari, Shrawani Misra, Sudeshna Sarkar
+
+
+### Business Context
+**Reddit.com** is a social media news and discussion website, where votes promote user-provided stories, links, and comments to the front page of the site. As of October 2019, Reddit.com is the 18th most visited site in the world according to Alexa Internet.
+
+As a site that relies upon users for content, interaction, and moderation, some interesting data can be pulled from Reddit that can show real-time trends of popular topics. Users “upvote” and “downvote” each others comments, with upvoted comments rising higher in threads. So a popular comment is much more likely to be seen by another user, and perhaps then further upvoted or commented upon. This makes for a complex network of users and discussions that also provides insight into trending topics.
+
+Reddit is made up of “subreddits” which are categories of threads of a similar topic or type. There are subreddits for politics, celebrities, memes, video games, and just about every other topic one can think of (and some one might never expect!).
+
+
+### Problem Description
+Digital piracy is often portrayed as a victimless crime, but that portrayal is false. Piracy negatively affects every single person working in these industries and their supply chains.On less monitored platforms like Reddit, discussing controversial topics is easier and that includes Piracy. We have analysed the data of the subreddit r/Piracy and see what kind of content is passed around to help propagate the ease of access to pirated content through normal users and bots.
+
+
+
+### Data Summary, Exploration, and Discussion
+
+
+#### Libraries used
+These libraries are used at various steps in this file. The use of prominent libraries are highlighted throughout the text.
+
+```{r,warning= FALSE, message= FALSE}
+library(tidytext)
+library(stringr)
+library(dplyr)
+library(kableExtra)
+library(RedditExtractoR)
+library(tidyverse)
+library(lubridate)
+```
+
+
+
+#### Reddit Data Collection
+
+Data Collect:
+piracy_comments_bots  https://drive.google.com/file/d/1OaXRe6DfRW5PPZ1r1zYTkgdEcNGmvg2z/view?usp=sharing
+piracy_threads  https://drive.google.com/file/d/1N1oVa0IxexYe4TUxkJFZ5_gz3lkrwYTS/view?usp=sharing
+
+*Reddit Extractor* is an R package for extracting data out of Reddit. It allows you to:
+1.  find subreddits based on a search query
+2.  find a user and their Reddit history
+3.  find URLs to threads of interest and retrieve comments out of these threads
+
+This basic API interaction does not require any registration with Reddit or use of a token for usage in R. To begin, we first installed and load the RedditExtractoR package:
+
+install.packages("RedditExtractoR")
+library(RedditExctractoR)
+
+![](https://www.linkpicture.com/q/RedditExtractor.png)
+
+
+Code Snippet:   
+library(RedditExtractoR)   
+piracy_urls <- find_thread_urls(subreddit="Piracy", sort_by="top", period="all" )   
+threads_contents_piracy <- get_thread_content(piracy_urls$url[1:100])   
+threads_piracy <- threads_contents_piracy$threads   
+comments_piracy <-threads_contents_piracy$comments   
+
+
+**find_thread_urls**   
+Find URLs to reddit threads of interest. There are 2 available search strategies: by keywords and by
+home page. Using a set of keywords Can help you narrow down your search to a topic of interest
+that crosses multiple subreddits whereas searching by home page can help you find, for example,
+top posts within a specific subreddit.
+
+**get_thread_content**
+This function takes a collection of URLs and returns a list with 2 data frames: 1. a data frame
+containing meta data describing each thread 2. a data frame with comments found in all threads
+
+
+#### Load Data and Pre-process Data
+
+```{r,warning = FALSE }
+b = read.csv("piracy_comments_bots.csv")
+```
+
+```{r,warning= FALSE }
+reddit_comments <- unique(b)
+```
+
+
+```{r,warning= FALSE }
+
+kable(reddit_comments[1000, ], caption = "Raw Reddit Data") %>%
+  kable_styling(font_size = 10) %>%
+  scroll_box(width = "100%", height = "200px")
+```
+**Data Summary**
+
+```{r,warning= FALSE }
+kable(summary(reddit_comments), caption = "Data Summary") %>%
+  kable_styling(font_size = 10) %>%
+  scroll_box(width ="100%", height = "200px")  
+
+```
+ 
+ 
+**Removing unnecessary special characters:**
+
+
+```{r,warning= FALSE }
+reddit_comment_df <- reddit_comments %>%
+  mutate(thread_id = url) %>%
+  mutate(comm_date = dmy(date)) %>%
+  mutate(comment = str_replace_all(comment,  "<.+>", " ")) %>%
+  mutate(comment = str_replace_all(comment,  "\\W", " ")) %>%
+  mutate(comment = str_replace_all(comment,  
+                                   "www|https|http", " ")) %>%
+  mutate(comment_score = as.numeric(score)) %>%
+  select(comm_date, comment_score, thread_id, author, upvotes, downvotes,golds,
+         comment_id, comment, bots) %>%
+  unique() %>%
+  na.omit()
+
+```
+
+```{r,warning= FALSE }
+reddit_df <- rbind(reddit_comment_df)
+
+```
+
+
+```{r,warning= FALSE }
+kable(reddit_df[8, ], caption = "Selected Reddit Data") %>%
+  kable_styling(font_size = 10) %>%
+  scroll_box(width = "100%", height = "200px")
+
+
+```
+### Explore Data
+
+#### Plot 1: Comments Timeline
+As seen from the Comments Timeline plot, we can conclude the below points:   
+1.  Maximum no of comments was posted between July’19 to November ‘19.   
+2.  Least no of comments were posted before November ‘18   
+3.  Between the time Mar’19 to Mar’22 t no of comments posted were mostly within the range of 1000.  
+Thus, it is evident from the plot that. No of Comments posted remains mostly constant and aroud 1000 with peak point being around July’19 to November ‘19.   
+
+```{r,warning= FALSE }
+
+
+reddit_df %>%
+  group_by(month = floor_date(comm_date, "month")) %>%
+  summarize(comments = n()) %>%
+  ggplot(aes(month, comments)) +
+  geom_line() +
+  labs(title = "Comments Timeline") +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "4 months") +
+  theme(axis.text.x = element_text(size = 7, angle = 45))
+
+```
+
+
+### Explore Subreddit Threads
+#### Plot 2: Subreddit Threads
+```{r,warning= FALSE }
+
+#number of comments
+n_comments <- nrow(reddit_df)
+
+
+
+threads <-reddit_comment_df %>%
+  count(thread_id) %>%
+  unique()
+
+summary_df <- tibble("number_threads"=n_distinct(threads),
+                     "number_comments"=n_comments)
+
+summary_df %>%
+  kable() %>%
+  kable_styling(c("striped", "bordered"),
+                full_width = FALSE, position = "left") %>%
+  row_spec(row = 1, align = "right")
+
+
+```
+
+#### Plot 3: Date Wise Highest Number of Comments (>500 comments)   
+
+This plot shows that   
+1. So, we notice from the plot that Maximum no of comments were posted between the time period 2019 to 2020.   
+2. We notice from the plot that Minimum no of comments were posted between the time 2020 to 2021.   
+
+```{r,warning= FALSE }
+
+reddit_df %>%
+  group_by(comm_date) %>%
+  summarize(comments = n()) %>%
+  filter(comments > 100) %>%
+  ggplot(aes(comm_date, comments, fill = comments)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Date Wise Highest Number of Comments (>500 comments)")
+
+
+```
+
+
+```{r,warning= FALSE }
+
+top5 <- top_n(threads, 5) %>%
+  arrange(desc(n))
+
+```
+#### Plot 4: Top Five Thread by Comment Count
+We have extracted the top 5 Reddit thread by the Comment Count.
+
+```{r,warning= FALSE }
+
+top5 %>%
+  kable(caption = "Top Five Thread by Comment Count") %>%
+  kable_styling(font_size = 8)
+
+```
+#### Plot 5: Users with Highest Number of comments (>20)    
+  
+From the above plot we could conclude that:      
+
+1. Highest no of comments had been made by the user GrowAsguard  which is near to 60 comments   
+2. Second highest no of comments had been made by the user VybeXE which is near to 40 comments   
+3. Least no of comments had been made by the user Martelliphone which is around 15   
+4. Most users have commented in the range of 20 to 40 comments   
+```{r,warning= FALSE }
+
+user_df <- reddit_comments %>%
+  group_by(author) %>%
+  summarise(n = n()) %>%
+  filter(n<20)
+
+
+freq_users <- reddit_comments %>%
+  anti_join(user_df, by = "author") %>%
+  mutate(author = str_replace_all(author,  "\\Q[deleted]\\E", " ")) %>%
+  group_by(author) %>%
+  summarise(n = n())
+
+
+
+freq_users %>%
+  filter(author != " ") %>%
+  ggplot((aes(x = n, y = author, color = author))) +
+  geom_point(size=5) +
+  labs(x = "number of comments", y = "author", title = "Users With Highest Number of Comments (>20 comments)")
+
+```
+
+#### Plot 6: top 5 threads by awards  
+  
+We have visualized top 5 threads by awards given by other users.   
+
+Most of the top awarded threads also tend to have high upvotes and are thus very popular on the subreddit. They also have more comments where users discuss how to refine their piracy searches better. Sometimes these threads are technical tutorials, sometimes information about different websites, sometimes discussions. 
+
+
+
+```{r,warning= FALSE }
+library(ggthemes)
+
+a=read.csv("piracy_threads.csv")
+reddit_threads2= unique(a)
+
+reddit_thread_df2 <- reddit_threads2 %>% filter(author!="[deleted]") %>%
+  mutate(date = ymd(date)) %>%
+  select(title, author, upvotes, comments, total_awards_received) %>%
+  arrange(desc(total_awards_received)) %>%
+  na.omit()
+
+
+
+
+```
+
+```{r,warning= FALSE }
+
+reddit_thread_df2 %>% slice_max(total_awards_received, n=5) %>%
+  ggplot(aes(author, total_awards_received)) +
+  geom_point(color='goldenrod',aes(size=upvotes)) + theme_pander() +
+  ggtitle("Top awarded threads") + theme(axis.text.x = element_text(size = 6, angle = 45))
+
+```
+
+### AI/ML procedure summary
+
+*H2O AutoML*
+
+AutoML or Automatic Machine Learning is the process of automating algorithm selection, feature generation, hyperparameter tuning, iterative modeling, and model assessment. AutoML makes it easy to train and evaluate machine learning models. Automating repetitive tasks allows people to focus on the data and the business problems they are trying to solve.
+
+We will be using H2O’s AutoML for automating the machine learning workflow, which includes automatic training and tuning of many models within a user-specified time-limit.
+
+
+
+```{r,warning= FALSE }
+library(h2o)
+
+
+```
+
+```{r,warning= FALSE, message=FALSE}
+target <- "bots"
+predictors <-colnames(select(reddit_df,-c('comment_id','thread_id','comm_date','bots')))
+
+h2o.init(nthreads = -1) 
+
+data_h2o <- as.h2o(bind_cols(reddit_df))
+#h2o.ls()
+
+
+```
+```{r,warning= FALSE }
+
+splits <- h2o.splitFrame(data = data_h2o, ratios = c(0.7, 0.15), seed = 1234)
+train_h2o <- splits[[1]] # from training data
+valid_h2o <- splits[[2]] # from training data
+test_h2o  <- splits[[3]]
+
+
+```
+
+
+```{r,warning= FALSE }
+
+automl_h2o_models <- h2o.automl(
+  x = predictors, 
+  y = target,
+  training_frame    = train_h2o,  
+  validation_frame  = valid_h2o,  
+  leaderboard_frame = test_h2o,
+  max_runtime_secs  = 600
+)
+
+
+```
+
+
+### Evaluation 
+Since we have a multi-class problem, we evaluate our model using mean per-class error. We can see from the table that the lowest mean per-class error, or the average of errors of each class in the multiclass ‘bots’ column, is from a Deep Learning Model, at 0.387.
+
+
+```{r,warning= FALSE }
+
+automl_h2o_models@leaderboard
+
+automl_leader <- automl_h2o_models@leader
+
+```
